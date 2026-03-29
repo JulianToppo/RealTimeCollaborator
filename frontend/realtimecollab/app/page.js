@@ -1,10 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {io} from "socket.io-client";
+
+
 
 export default function Home() {
   const [text, setText] = useState("");
+  const [socket, setSocket] = useState(null);
   console.log("Home is called");
+
+  useEffect(() => {
+    const s = io("http://localhost:5000");
+    setSocket(s);
+  
+    return () => s.disconnect();
+  }, []);
+  
+  useEffect(() => {
+    if (!socket) return;
+  
+    socket.on("received-message", (data) => {
+      setText(data);
+    });
+  
+    return () => {
+      socket.off("received-message");
+    };
+  }, [socket]);
+
+
   return (
     <div style={{ width: "100%",backgroundColor:"Green" , display:"flex" ,justifyContent:"center" ,flexDirection:"column", alignItems:"center"}}>
       <textarea
@@ -13,6 +38,7 @@ export default function Home() {
         onChange={(e) => {
           e.preventDefault();
           setText(e.target.value);
+          socket.emit('send-message',e.target.value)
         }}
         style={{
           width:"80%",
